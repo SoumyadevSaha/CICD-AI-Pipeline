@@ -60,7 +60,7 @@ jobs:
 
             -   name: Archive Model Artifact (if available)
                 if: steps.check_model.outputs.model_exists == 'true'
-                uses: actions/upload-artifact@v3
+                uses: actions/upload-artifact@v4
                 with:
                     name: trained-model
                     path: models/model.h5
