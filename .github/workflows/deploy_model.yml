@@ -1,0 +1,36 @@
+name: Deploy Model
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
+    
+            - name: Setup Python 3.8
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.8'
+
+            - name: Install Dependencies
+              run: |
+                python -m pip install --upgrade pip
+                pip install -r requirements.txt
+
+            - name: List Model Files
+              run: |
+                echo "Models available:"
+                ls models/
+
+            - name: Encrypt and Upload Model Files
+              env:
+                SERVER_USERNAME: ${{ secrets.SERVER_USERNAME || 'default_username' }}
+                SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+                SERVER_URL: ${{ secrets.SERVER_URL }}
+              run: |
+                python scripts/encrypt_and_upload.py models/
