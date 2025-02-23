@@ -58,7 +58,7 @@ jobs:
           echo "Notebook output:"
           cat output.ipynb
 
-      - name: Debug: List models directory
+      - name: "Debug: List models directory"
         if: steps.check_file.outputs.exists == 'true'
         run: |
           echo "Listing contents of models/ directory:"
