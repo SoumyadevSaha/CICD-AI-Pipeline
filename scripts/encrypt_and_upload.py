@@ -6,6 +6,8 @@ import requests
 from cryptography.fernet import Fernet
 
 def get_symmetric_key(server_url, username, password):
+    # Remove any extraneous whitespace from the URL
+    server_url = server_url.strip()
     response = requests.get(f"{server_url}/get-key", auth=(username, password))
     response.raise_for_status()
     key = response.json().get("key")
