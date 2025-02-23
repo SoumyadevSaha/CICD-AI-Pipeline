@@ -1,15 +1,19 @@
-name: Train and Test Model
-permissions:
-  contents: write
+name: Train, Test, and Deploy Model
 
 on:
   push:
+    # Trigger on any changes to .ipynb files anywhere in the repo
     paths:
       - "**/*.ipynb"
+
+permissions:
+  contents: write
 
 jobs:
   train:
     runs-on: ubuntu-latest
+    outputs:
+      model_exists: ${{ steps.check_model.outputs.model_exists }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -36,6 +40,11 @@ jobs:
               echo "No notebook file found. Skipping training."
               echo "exists=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Install ipykernel and register kernel
+        run: |
+          pip install ipykernel
+          python -m ipykernel install --user --name python3 --display-name "Python 3"
 
       - name: Run Notebook (model.ipynb)
         if: steps.check_file.outputs.exists == 'true'
@@ -92,3 +101,43 @@ jobs:
           git add report.md
           git commit -m "Update training report [skip ci]" || echo "No changes to commit"
           git push origin reports --force
+
+  deploy:
+    needs: train
+    runs-on: ubuntu-latest
+    environment:
+      name: production  # This environment should be configured with required manual approval.
+    if: needs.train.outputs.model_exists == 'true'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download Model Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: models/
+
+      - name: List Model Files
+        run: |
+          echo "Models available:"
+          ls models/
+
+      - name: Download Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: training-report
+          path: .
+
+      - name: Show Report
+        run: |
+          echo "Training Report:"
+          cat report.md
+
+      - name: Encrypt and Upload Model Files
+        env:
+          SERVER_USERNAME: ${{ secrets.SERVER_USERNAME || 'default_username' }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          SERVER_URL: ${{ secrets.SERVER_URL }}
+        run: |
+          python scripts/encrypt_and_upload.py upload models/
