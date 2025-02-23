@@ -4,3 +4,6 @@ papermill
 jupyter
 tensorflow
 scikit-learn
+matplotlib
+seaborn
+tabulate

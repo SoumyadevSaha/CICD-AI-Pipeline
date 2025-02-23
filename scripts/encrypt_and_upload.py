@@ -23,6 +23,16 @@ def encrypt_file(file_path, key):
         f.write(encrypted)
     return enc_file_path
 
+def decrypt_file(file_path, key):
+    fernet = Fernet(key.encode())
+    with open(file_path, "rb") as f:
+        data = f.read()
+    decrypted = fernet.decrypt(data)
+    dec_file_path = file_path.replace(".enc", ".dec")
+    with open(dec_file_path, "wb") as f:
+        f.write(decrypted)
+    return dec_file_path
+
 def upload_file_to_server(server_url, file_path, username, password):
     url = f"{server_url}/upload-model"
     with open(file_path, "rb") as f:
@@ -31,12 +41,7 @@ def upload_file_to_server(server_url, file_path, username, password):
     response.raise_for_status()
     print(f"Uploaded {file_path} successfully to server.")
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: encrypt_and_upload.py <models_directory>")
-        sys.exit(1)
-    models_dir = sys.argv[1]
-
+def upload_mode(models_dir):
     username = os.environ.get("SERVER_USERNAME")
     password = os.environ.get("SERVER_PASSWORD")
     server_url = os.environ.get("SERVER_URL")
@@ -59,6 +64,33 @@ def main():
         print(f"Encrypted file saved as: {enc_file}")
         print("Uploading encrypted file to server...")
         upload_file_to_server(server_url, enc_file, username, password)
+
+def decrypt_mode(file_path):
+    key = os.environ.get("SERVER_KEY")
+    if not key:
+        print("Missing required environment variable: SERVER_KEY")
+        sys.exit(1)
+    print(f"Decrypting {file_path}...")
+    dec_file = decrypt_file(file_path, key)
+    print(f"Decrypted file saved as: {dec_file}")
+
+def main():
+    if len(sys.argv) < 3:
+        print("Usage:")
+        print("  To upload (encrypt and upload files): encrypt_and_decrypt.py upload <models_directory>")
+        print("  To decrypt a file: encrypt_and_decrypt.py decrypt <encrypted_file>")
+        sys.exit(1)
+
+    mode = sys.argv[1].lower()
+    if mode == "upload":
+        models_dir = sys.argv[2]
+        upload_mode(models_dir)
+    elif mode == "decrypt":
+        file_path = sys.argv[2]
+        decrypt_mode(file_path)
+    else:
+        print("Invalid mode. Use 'upload' or 'decrypt'.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

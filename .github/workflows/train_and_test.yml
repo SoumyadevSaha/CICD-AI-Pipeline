@@ -1,66 +1,83 @@
 name: Train and Test Model
 
 on:
-    push:
-        # Trigger on any changes to .ipynb files anywhere in the repo
-        paths:
-            -   "**/*.ipynb"
+  push:
+    # Trigger on any changes to .ipynb files anywhere in the repo
+    # cspell:ignore ipynb
+    paths:
+      - "**/*.ipynb"
 
 jobs:
-    train:
-        runs-on: ubuntu-latest
-        steps:
-            -   name: Checkout Code
-                uses: actions/checkout@v3
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-            -   name: Setup Python 3.8
-                uses: actions/setup-python@v4
-                with:
-                    python-version: "3.8"
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
 
-            -   name: Install Dependencies
-                run: |
-                    python -m pip install --upgrade pip
-                    pip install -r requirements.txt
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Check if notebooks/model.ipynb exists
+        id: check_file
+        # cspell:ignore ipynb
+        run: |
+          if [ -f notebooks/model.ipynb ]; then
+              echo "notebook found"
+              echo "exists=true" >> $GITHUB_OUTPUT
+          else
+              echo "No notebook file found. Skipping training."
+              echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
-            -   name: Check if notebooks/model.ipynb exists
-                id: check_file
-                run: |
-                    if [ -f notebooks/model.ipynb ]; then
-                        echo "notebook found"
-                        echo "exists=true" >> $GITHUB_OUTPUT
-                    else
-                        echo "No notebook file found. Skipping training."
-                        echo "exists=false" >> $GITHUB_OUTPUT
-                    fi
+      - name: Run Notebook (model.ipynb)
+        if: steps.check_file.outputs.exists == 'true'
+        run: |
+          pip install papermill
+          papermill notebooks/model.ipynb output.ipynb --kernel python3
+          # cspell:ignore ipynb
+      - name: Run Notebook (model.ipynb)
+        if: steps.check_file.outputs.exists == 'true'
+        run: |
+          pip install papermill
+          cat output.ipynb
+          # cspell:ignore ipynboks/model.ipynb output.ipynb --kernel python3
 
-            -   name: Run Notebook (model.ipynb)
-                if: steps.check_file.outputs.exists == 'true'
-                run: |
-                    pip install papermill
-                    papermill notebooks/model.ipynb output.ipynb --kernel python3
+      - name: Show Notebook Output
+        if: steps.check_file.outputs.exists == 'true'
+        run: |
+          echo "Notebook output:"
+          cat output.ipynb
 
-            -   name: Show Notebook Output
-                if: steps.check_file.outputs.exists == 'true'
-                run: |
-                    echo "Notebook output:"
-                    cat output.ipynb
+      - name: Check if model.h5 exists
+        id: check_model
+        if: steps.check_file.outputs.exists == 'true' && runner.os != 'Windows'
+        run: |
+          if [ -f models/model.h5 ]; then
+              echo "model exists"
+              echo "model_exists=true" >> $GITHUB_OUTPUT
+          else
+              echo "model does not exist"
+              echo "model_exists=false" >> $GITHUB_OUTPUT
+          fi
 
-            -   name: Check if model.h5 exists
-                id: check_model
-                if: steps.check_file.outputs.exists == 'true' && runner.os != 'Windows'
-                run: |
-                    if [ -f models/model.h5 ]; then
-                        echo "model exists"
-                        echo "model_exists=true" >> $GITHUB_OUTPUT
-                    else
-                        echo "model does not exist"
-                        echo "model_exists=false" >> $GITHUB_OUTPUT
-                    fi
+      - name: Archive Model Artifact (if available)
+        if: steps.check_model.outputs.model_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: models/model.h5
 
-            -   name: Archive Model Artifact (if available)
-                if: steps.check_model.outputs.model_exists == 'true'
-                uses: actions/upload-artifact@v4
-                with:
-                    name: trained-model
-                    path: models/model.h5
+      - name: Archive Report & Plots Artifact (if available)
+        if: steps.check_file.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-report
+          path: |
+            report.md
+            plots/
