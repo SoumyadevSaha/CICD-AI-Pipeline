@@ -41,7 +41,7 @@ jobs:
         if: steps.check_file.outputs.exists == 'true'
         run: |
           pip install papermill
-          papermill notebooks/model.ipynb output.ipynb --kernel python3
+          papermill notebooks/model.ipynb output.ipynb
 
       - name: Show Notebook Output
         if: steps.check_file.outputs.exists == 'true'
