@@ -47,4 +47,4 @@ jobs:
           SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
           SERVER_URL: ${{ secrets.SERVER_URL }}
         run: |
-          python scripts/encrypt_and_decrypt.py upload models/
+          python scripts/encrypt_and_upload.py upload models/

@@ -1,9 +1,9 @@
 name: Train and Test Model
+permissions:
+  contents: write
 
 on:
   push:
-    # Trigger on any changes to .ipynb files anywhere in the repo
-    # cspell:ignore ipynb
     paths:
       - "**/*.ipynb"
 
@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Python 3.8
         uses: actions/setup-python@v4
@@ -80,3 +82,13 @@ jobs:
           path: |
             report.md
             plots/
+
+      - name: Commit Report to Reports Branch
+        if: steps.check_file.outputs.exists == 'true'
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git checkout -B reports
+          git add report.md
+          git commit -m "Update training report [skip ci]" || echo "No changes to commit"
+          git push origin reports --force
