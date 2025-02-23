@@ -13,21 +13,33 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-  
+
       - name: Setup Python 3.8
         uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Download Model Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: models/
 
       - name: List Model Files
         run: |
           echo "Models available:"
           ls models/
+
+      - name: Download Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: training-report
+          path: .
+
+      - name: Show Report
+        run: |
+          echo "Training Report:"
+          cat report.md
 
       - name: Encrypt and Upload Model Files
         env:
@@ -35,4 +47,4 @@ jobs:
           SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
           SERVER_URL: ${{ secrets.SERVER_URL }}
         run: |
-          python scripts/encrypt_and_upload.py models/
+          python scripts/encrypt_and_decrypt.py upload models/
