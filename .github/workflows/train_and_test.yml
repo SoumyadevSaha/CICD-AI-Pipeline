@@ -33,6 +33,7 @@ jobs:
           else
               echo "No notebook file found. Skipping training."
               echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run Notebook (model.ipynb)
         if: steps.check_file.outputs.exists == 'true'
