@@ -1,9 +1,9 @@
-requests
-cryptography
-papermill
-jupyter
 tensorflow
 scikit-learn
 matplotlib
 seaborn
+pandas
+papermill
+cryptography
+requests
 tabulate

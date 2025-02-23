@@ -3,7 +3,6 @@ name: Train and Test Model
 on:
   push:
     # Trigger on any changes to .ipynb files anywhere in the repo
-    # cspell:ignore ipynb
     paths:
       - "**/*.ipynb"
 
@@ -13,6 +12,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          # Fetch full history for branch operations (needed to commit the report)
+          fetch-depth: 0
 
       - name: Setup Python 3.8
         uses: actions/setup-python@v4
@@ -80,3 +82,15 @@ jobs:
           path: |
             report.md
             plots/
+
+      - name: Commit Report to Reports Branch
+        if: steps.check_file.outputs.exists == 'true'
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          # Create or update the 'reports' branch
+          git checkout -B reports
+          cp report.md ./report.md
+          git add report.md
+          git commit -m "Update training report [skip ci]" || echo "No changes to commit"
+          git push origin reports --force
