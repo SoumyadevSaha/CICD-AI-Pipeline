@@ -7,3 +7,4 @@ papermill
 cryptography
 requests
 tabulate
+ipykernel
